@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Jadwal Bel Sekolah</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f3f1ec; --surface:#fff; --ink:#1d2433; --muted:#6a7183; --line:#dcd8cf;
+  --brass:#b9801a; --brass-ink:#fff; --ok:#2f7d4f; --warn:#b3412f; --ring:#f2b84b;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#141a26; --surface:#1d2535; --ink:#eef0f5; --muted:#9aa3b8; --line:#2f3a52;
+    --brass:#e2a540; --brass-ink:#1a1405; --ok:#5cc08a; --warn:#f08a77; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#141a26; --surface:#1d2535; --ink:#eef0f5; --muted:#9aa3b8; --line:#2f3a52;
+  --brass:#e2a540; --brass-ink:#1a1405; --ok:#5cc08a; --warn:#f08a77; color-scheme:dark;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Bricolage Grotesque",system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.45}
+main{max-width:920px;margin:0 auto;padding:20px 16px 48px}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--brass);outline-offset:2px}
+
+.hero{display:grid;grid-template-columns:1fr auto;gap:16px;align-items:end;padding:8px 0 20px;border-bottom:3px solid var(--ink)}
+.clock{font-size:clamp(3.2rem,12vw,6.6rem);font-weight:800;letter-spacing:-.04em;line-height:.9;font-variant-numeric:tabular-nums}
+.clock small{font-size:.38em;font-weight:600;letter-spacing:0;color:var(--muted)}
+.date{margin-top:10px;color:var(--muted);font-size:1.05rem}
+.next{text-align:right;max-width:280px}
+.next .lbl{color:var(--muted);font-size:.95rem}
+.next .who{font-weight:600;font-size:1.1rem}
+.next .in{font-size:2rem;font-weight:800;font-variant-numeric:tabular-nums;color:var(--brass)}
+
+.ringing{display:none;margin:16px 0 0;padding:14px 18px;border-radius:12px;background:var(--ring);color:#2a1d00;font-weight:800;font-size:1.3rem;align-items:center;gap:12px}
+.ringing.on{display:flex}
+.ringing .b{display:inline-block;transform-origin:50% 0;animation:swing .5s ease-in-out infinite alternate}
+@keyframes swing{from{transform:rotate(-18deg)}to{transform:rotate(18deg)}}
+
+.bar{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;padding:16px 0;border-bottom:1px solid var(--line)}
+.bar .grp{display:flex;align-items:center;gap:10px}
+.bar label{color:var(--muted);font-size:.95rem}
+input[type=range]{accent-color:var(--brass);width:130px}
+.btn{border:1.5px solid var(--ink);background:transparent;border-radius:8px;padding:8px 14px;font-weight:600}
+.btn:hover{background:var(--ink);color:var(--bg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:var(--brass-ink)}
+.btn.primary:hover{filter:brightness(1.08);background:var(--brass);color:var(--brass-ink)}
+.btn.small{padding:5px 10px;font-size:.9rem;border-width:1px}
+.btn.danger{border-color:var(--warn);color:var(--warn)}
+.btn.danger:hover{background:var(--warn);color:var(--bg)}
+.spacer{flex:1}
+
+.sw{position:relative;width:46px;height:26px;flex:none}
+.sw input{position:absolute;inset:0;opacity:0;width:100%;height:100%;margin:0;cursor:pointer}
+.sw span{position:absolute;inset:0;background:var(--line);border-radius:26px;transition:background .15s}
+.sw span::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .15s}
+.sw input:checked + span{background:var(--ok)}
+.sw input:checked + span::after{transform:translateX(20px)}
+.sw input:focus-visible + span{outline:3px solid var(--brass);outline-offset:2px}
+
+.notice{margin-top:14px;padding:12px 16px;border-radius:10px;border:1.5px dashed var(--brass);display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center}
+.notice[hidden]{display:none}
+.notice p{margin:0;flex:1;min-width:200px}
+
+.tabs{display:flex;gap:6px;overflow-x:auto;padding:18px 0 0;border-bottom:2px solid var(--line)}
+.tab{flex:1 0 auto;min-width:84px;border:1px solid var(--line);border-bottom:none;background:transparent;border-radius:10px 10px 0 0;padding:9px 12px;font-weight:600;text-align:center;position:relative;top:2px}
+.tab .c{display:block;font-size:.78rem;font-weight:400;color:var(--muted)}
+.tab[aria-selected="true"]{background:var(--surface);border-color:var(--brass);border-bottom:2px solid var(--surface);box-shadow:inset 0 3px 0 var(--brass)}
+.tab.today .n::after{content:" •";color:var(--brass)}
+
+.dayhead{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:20px 0 12px}
+.dayhead h2{font-size:1.35rem;margin:0}
+.copy{display:none;margin:0 0 14px;padding:14px 16px;background:var(--surface);border:1px solid var(--line);border-radius:10px}
+.copy.on{display:block}
+.copy .picks{display:flex;flex-wrap:wrap;gap:8px 16px;margin:8px 0 12px}
+.copy label{display:flex;align-items:center;gap:6px}
+.copy input{accent-color:var(--brass);width:18px;height:18px}
+
+.list{display:flex;flex-direction:column;gap:10px}
+.row{display:grid;grid-template-columns:auto 1fr auto;gap:10px 14px;align-items:center;background:var(--surface);border:1px solid var(--line);border-left:6px solid var(--brass);border-radius:10px;padding:12px 14px}
+.row.off{border-left-color:var(--line);opacity:.62}
+.row.next-up{box-shadow:0 0 0 2px var(--brass)}
+.row input[type=time]{font-size:1.6rem;font-weight:800;letter-spacing:-.02em;background:transparent;border:1px solid transparent;border-radius:6px;padding:2px 4px;font-variant-numeric:tabular-nums}
+.row input[type=time]:hover{border-color:var(--line)}
+.row input.name{width:100%;background:transparent;border:1px solid transparent;border-radius:6px;padding:6px 8px;font-size:1.05rem;font-weight:600}
+.row input.name:hover{border-color:var(--line)}
+.row .ctl{display:flex;align-items:center;gap:8px}
+.row .more{grid-column:1 / -1;display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;padding-top:8px;border-top:1px solid var(--line)}
+select,.num{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:5px 8px}
+.num{width:60px}
+.more label{color:var(--muted);font-size:.88rem;display:flex;align-items:center;gap:6px}
+.empty{padding:28px;text-align:center;border:1.5px dashed var(--line);border-radius:10px;color:var(--muted)}
+.empty .btn{margin:10px 4px 0}
+.sounds{margin-top:14px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 16px}
+.sounds summary{cursor:pointer}
+.sounds summary span{color:var(--muted);margin-left:8px;font-size:.9rem}
+.sbody{padding-top:10px}
+.srow{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;padding:8px 0;border-bottom:1px solid var(--line)}
+.srow .sname{font-weight:600;flex:1;min-width:140px;overflow-wrap:anywhere}
+.smeta{color:var(--muted);font-size:.9rem;margin:0 0 8px}
+.srow .smeta{margin:0}
+#pickFile{margin-top:12px}
+.ringing .btn{color:#2a1d00;border-color:#2a1d00}
+.ringing .btn:hover{background:#2a1d00;color:var(--ring)}
+.foot{margin-top:28px;color:var(--muted);font-size:.9rem}
+@media (max-width:640px){
+  .hero{grid-template-columns:1fr}
+  .next{text-align:left;max-width:none}
+  .row{grid-template-columns:auto 1fr}
+  .row .ctl{grid-column:1 / -1;justify-content:flex-end}
+}
+@media (prefers-reduced-motion:reduce){.ringing .b{animation:none}}
+</style>
+</head>
+<body>
+<main>
+  <header class="hero">
+    <div>
+      <div class="clock" id="clock">--:--<small>:--</small></div>
+      <div class="date" id="date"></div>
+    </div>
+    <div class="next" id="next"></div>
+  </header>
+
+  <div class="ringing" id="ringing" role="status"><span class="b" aria-hidden="true">🔔</span><span id="ringingText"></span><span class="spacer"></span><button class="btn small" id="stopBtn">Hentikan</button></div>
+
+  <div class="notice" id="notice">
+    <p>Browser memblokir suara sampai Anda berinteraksi dengan halaman. Aktifkan suara agar bel terjadwal bisa berbunyi.</p>
+    <button class="btn primary" id="enable">Aktifkan suara</button>
+  </div>
+
+  <div class="bar">
+    <div class="grp"><label class="sw" aria-label="Jadwal aktif"><input type="checkbox" id="master"><span></span></label><strong id="masterLbl">Jadwal aktif</strong></div>
+    <div class="grp"><label for="vol">Volume</label><input type="range" id="vol" min="0" max="1" step="0.05"></div>
+    <span class="spacer"></span>
+    <button class="btn" id="school">Muat jadwal SMPK BPK Penabur Cimahi</button>
+  </div>
+
+  <details class="sounds" id="soundsBox">
+    <summary><strong>Suara kustom</strong><span id="soundCount"></span></summary>
+    <div class="sbody">
+      <p class="smeta" id="storeNote"></p>
+      <div id="soundList"></div>
+      <input type="file" id="file" accept="audio/*" multiple hidden>
+      <button class="btn primary small" id="pickFile">Tambah suara</button>
+    </div>
+  </details>
+
+  <div class="tabs" id="tabs" role="tablist" aria-label="Pilih hari"></div>
+
+  <div class="dayhead">
+    <h2 id="dayTitle"></h2>
+    <span class="spacer"></span>
+    <button class="btn small" id="sample">Muat contoh jadwal</button>
+    <button class="btn small" id="copyBtn">Salin ke hari lain</button>
+    <button class="btn primary" id="add">Tambah bel</button>
+  </div>
+
+  <div class="copy" id="copyPanel">
+    <strong id="copyTitle"></strong>
+    <div class="picks" id="picks"></div>
+    <button class="btn primary small" id="doCopy">Salin jadwal</button>
+    <button class="btn small" id="cancelCopy">Batal</button>
+  </div>
+
+  <div class="list" id="list"></div>
+
+  <p class="foot">Biarkan tab ini tetap terbuka agar bel berbunyi. Perubahan tersimpan otomatis di browser ini.</p>
+</main>
+
+<script>
+(function(){
+  var DAYS=["Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"];
+  var ORDER=[1,2,3,4,5,6,0];
+  var KEY="belsekolah.v2";
+  var state={enabled:true,volume:0.8,schedule:{0:[],1:[],2:[],3:[],4:[],5:[],6:[]}};
+  var sel=new Date().getDay();
+  var fired={};
+  var ctx=null;
+
+  function uid(){return Math.random().toString(36).slice(2,9)}
+  function pad(n){return String(n).padStart(2,"0")}
+  function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+  function minutesOf(t){var p=(t||"").split(":");return p.length<2?null:(+p[0])*60+(+p[1])}
+
+  function load(){
+    try{
+      var raw=localStorage.getItem(KEY);
+      if(raw){
+        var s=JSON.parse(raw);
+        if(s&&s.schedule){state.enabled=s.enabled!==false;state.volume=s.volume==null?0.8:s.volume;for(var d=0;d<7;d++)state.schedule[d]=Array.isArray(s.schedule[d])?s.schedule[d]:[];return}
+      }
+      var old=localStorage.getItem("schoolbell.v1");
+      if(old){ /* migrasi dari versi lama */
+        var o=JSON.parse(old);
+        state.enabled=o.enabled!==false;state.volume=o.volume==null?0.8:o.volume;
+        (o.items||[]).forEach(function(it){(it.days||[]).forEach(function(d){
+          state.schedule[d].push({id:uid(),time:it.time,label:it.label,sound:it.sound,rings:it.rings,on:it.on!==false});
+        })});
+      }
+    }catch(e){}
+  }
+  function save(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}}
+  function cur(){return state.schedule[sel]}
+  function newItem(time,label){return{id:uid(),time:time,label:label,sound:"bell",rings:3,on:true}}
+
+  /* Jadwal SMPK BPK Penabur Cimahi 2026-2027: P=pelajaran ke-, I=istirahat ke- */
+  var NUM=["pertama","kedua","ketiga","keempat","kelima","keenam","ketujuh","kedelapan","kesembilan","kesepuluh"];
+  var TK=[["06:30","Renungan Pagi"],["06:45","Literasi"],["07:00","P1"],["07:40","P2"],["08:20","P3"],["09:00","P4"],["09:40","I1"],["10:00","P5"],["10:40","P6"],["11:20","P7"],["12:00","P8"],["12:40","I2"],["13:00","Ekstrakurikuler"],["14:20","Remedial / Pengayaan"],["15:00","Selesai"]];
+  var SCH={
+    1:[["06:30","Kegiatan Senin"],["07:20","P1"],["08:00","P2"],["08:40","P3"],["09:20","P4"],["10:00","I1"],["10:20","P5"],["11:00","P6"],["11:40","P7"],["12:20","P8"],["13:00","I2"],["13:20","P9"],["14:00","P10"],["14:40","I3"],["15:00","Club"],["16:20","Selesai"]],
+    2:TK,
+    3:[["06:30","Kebaktian"],["07:40","Guru Wali"],["08:00","P1"],["08:40","P2"],["09:20","P3"],["10:00","I1"],["10:20","P4"],["11:00","P5"],["11:40","P6"],["12:20","I2"],["12:40","P7"],["13:20","P8"],["14:00","I3"],["14:20","Club"],["15:40","Selesai"]],
+    4:TK,
+    5:[["06:30","Renungan Pagi"],["06:45","Literasi"],["07:00","Guru Wali"],["07:20","P2"],["08:00","P3"],["08:40","P4"],["09:20","P5"],["10:00","I1"],["10:20","P6"],["11:00","P7"],["11:40","P8"],["12:20","I2"],["12:40","P9"],["13:20","P10"],["14:00","I3"],["14:20","KIR"],["15:40","Selesai"]]
+  };
+  function mk(x){
+    var l=x[1],r=2,m=/^P(\d+)$/.exec(l),i=/^I(\d)$/.exec(l);
+    if(m){l="Pelajaran "+NUM[m[1]-1]}
+    else if(i){l="Istirahat "+NUM[i[1]-1];r=3}
+    else if(l==="Selesai"){l="Bel pulang";r=3}
+    return{id:uid(),time:x[0],label:l,sound:"bell",rings:r,on:true};
+  }
+  function hasAny(){for(var d=0;d<7;d++)if(state.schedule[d].length)return true;return false}
+  function buildSchool(){
+    state.schedule={0:[],1:[],2:[],3:[],4:[],5:[],6:[]};
+    Object.keys(SCH).forEach(function(d){state.schedule[d]=SCH[d].map(mk)});
+    save();render();
+  }
+
+  /* ---------- Audio ---------- */
+  function ensureCtx(){
+    if(!ctx){var AC=window.AudioContext||window.webkitAudioContext;if(AC){ctx=new AC()}}
+    if(ctx&&ctx.state==="suspended"){ctx.resume()}
+    updateNotice();
+    return ctx;
+  }
+  function tone(freq,t,dur,type,gain,vol){
+    var o=ctx.createOscillator(),g=ctx.createGain();
+    o.type=type;o.frequency.value=freq;
+    g.gain.setValueAtTime(0.0001,t);
+    g.gain.exponentialRampToValueAtTime(Math.max(gain*vol,0.0002),t+0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    o.connect(g);g.connect(ctx.destination);
+    o.start(t);o.stop(t+dur+0.05);track(o);
+  }
+  var live=[],sounds=[],bufs={},dbOK=true;
+  function track(s){live.push(s);s.onended=function(){var i=live.indexOf(s);if(i>=0)live.splice(i,1)}}
+  function stopAll(){live.slice().forEach(function(s){try{s.stop()}catch(e){}});live=[];document.getElementById('ringing').classList.remove('on')}
+  function findSound(id){return sounds.filter(function(s){return s.id===id})[0]}
+  function allItems(){var a=[];for(var d=0;d<7;d++)a=a.concat(state.schedule[d]);return a}
+  function getBuf(rec){
+    if(bufs[rec.id])return Promise.resolve(bufs[rec.id]);
+    return new Promise(function(res,rej){ctx.decodeAudioData(rec.data.slice(0),function(b){bufs[rec.id]=b;res(b)},rej)});
+  }
+  function playCustom(rec,rings,v){
+    getBuf(rec).then(function(b){
+      var t=ctx.currentTime+0.05;
+      for(var i=0;i<rings;i++){
+        var s=ctx.createBufferSource(),g=ctx.createGain();
+        s.buffer=b;g.gain.value=v;s.connect(g);g.connect(ctx.destination);
+        s.start(t+i*(b.duration+0.3));track(s);
+      }
+    }).catch(function(){alert('File suara tidak bisa diputar: '+rec.name)});
+  }
+  function soundOpts(cur){
+    var o=[['bell','Bel sekolah'],['chime','Denting'],['beep','Elektronik']];
+    sounds.forEach(function(s){o.push(['c:'+s.id,'Kustom: '+s.name])});
+    if(cur&&cur.slice(0,2)==='c:'&&!findSound(cur.slice(2)))o.push([cur,'Suara kustom hilang (pakai bel sekolah)']);
+    return o.map(function(x){return '<option value="'+x[0]+'"'+(x[0]===cur?' selected':'')+'>'+esc(x[1])+'</option>'}).join('');
+  }
+  function play(sound,rings){
+    if(!ensureCtx())return 0;
+    var v=state.volume,t0=ctx.currentTime+0.05,total=0,i,k;
+    rings=Math.max(1,Math.min(10,rings|0||1));
+    if(sound&&sound.slice(0,2)==="c:"){
+      var rec=findSound(sound.slice(2));
+      if(rec){playCustom(rec,rings,v);return (rec.dur+0.3)*rings}
+      sound="bell";
+    }
+    if(sound==="bell"){
+      var parts=[[1,1],[2.76,.55],[5.4,.3],[8.93,.15]];
+      for(i=0;i<rings;i++)for(k=0;k<parts.length;k++)tone(520*parts[k][0],t0+i*1.3,2.2/(1+k*.6),"sine",.5*parts[k][1],v);
+      total=rings*1.3+1.5;
+    }else if(sound==="chime"){
+      var notes=[659.25,523.25,587.33,392];
+      for(i=0;i<rings;i++)for(k=0;k<notes.length;k++)tone(notes[k],t0+i*2.6+k*.55,1.6,"sine",.55,v);
+      total=rings*2.6;
+    }else{
+      for(i=0;i<rings;i++)for(k=0;k<3;k++)tone(920,t0+i*1.2+k*.22,.14,"square",.18,v);
+      total=rings*1.2+.4;
+    }
+    return total;
+  }
+
+  /* ---------- Penyimpanan suara kustom (IndexedDB) ---------- */
+  function dbOpen(){
+    return new Promise(function(res,rej){
+      try{
+        var r=indexedDB.open('belsekolah-sounds',1);
+        r.onupgradeneeded=function(){r.result.createObjectStore('sounds',{keyPath:'id'})};
+        r.onsuccess=function(){res(r.result)};
+        r.onerror=function(){rej(r.error)};
+      }catch(e){rej(e)}
+    });
+  }
+  function dbRun(mode,fn){
+    return dbOpen().then(function(db){
+      return new Promise(function(res,rej){
+        var tx=db.transaction('sounds',mode),rq=fn(tx.objectStore('sounds'));
+        tx.oncomplete=function(){db.close();res(rq&&rq.result)};
+        tx.onerror=tx.onabort=function(){db.close();rej(tx.error)};
+      });
+    });
+  }
+  function loadSounds(){
+    dbRun('readonly',function(st){return st.getAll()}).then(function(r){sounds=r||[]}).catch(function(){dbOK=false}).then(function(){renderSounds();render()});
+    try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}
+  }
+  function fmtSize(n){return n<1048576?Math.round(n/1024)+' KB':(n/1048576).toFixed(1)+' MB'}
+  function renderSounds(){
+    document.getElementById('soundCount').textContent=sounds.length?sounds.length+' suara':'belum ada';
+    document.getElementById('soundList').innerHTML=sounds.length?sounds.map(function(s){
+      return '<div class="srow" data-sid="'+s.id+'"><span class="sname">'+esc(s.name)+'</span><span class="smeta">'+s.dur.toFixed(1)+' dtk, '+fmtSize(s.size)+'</span><button class="btn small" data-sa="play">Putar</button><button class="btn small danger" data-sa="del">Hapus</button></div>';
+    }).join(''):'<p class="smeta">Belum ada suara kustom. Tambahkan file MP3, WAV, atau OGG (maks. 8 MB per file).</p>';
+    document.getElementById('storeNote').textContent=dbOK?'Suara tersimpan di browser ini dan tetap ada walau halaman ditutup.':'Penyimpanan browser tidak tersedia. Suara hanya bertahan sampai halaman ditutup.';
+  }
+
+  /* ---------- Banner ---------- */
+  var ringTimer=null;
+  function showRinging(text,secs){
+    var el=document.getElementById("ringing");
+    document.getElementById("ringingText").textContent=text;
+    el.classList.add("on");
+    clearTimeout(ringTimer);
+    ringTimer=setTimeout(function(){el.classList.remove("on")},Math.max(2500,secs*1000));
+  }
+
+  /* ---------- Penjadwal ---------- */
+  function tick(){
+    var now=new Date();
+    var dayKey=now.getFullYear()+"-"+now.getMonth()+"-"+now.getDate();
+    var curMin=now.getHours()*60+now.getMinutes();
+    if(state.enabled){
+      state.schedule[now.getDay()].forEach(function(it){
+        if(!it.on||minutesOf(it.time)!==curMin)return;
+        var k=dayKey+"|"+it.id+"|"+it.time;
+        if(fired[k])return;
+        fired[k]=1;
+        showRinging((it.label||"Bel")+" · "+it.time,play(it.sound,it.rings));
+      });
+    }
+    renderClock(now);
+    renderNext(now);
+  }
+  function nextBell(now){
+    if(!state.enabled)return null;
+    var best=null;
+    for(var d=0;d<8;d++){
+      var wd=(now.getDay()+d)%7;
+      state.schedule[wd].forEach(function(it){
+        if(!it.on)return;
+        var m=minutesOf(it.time);if(m===null)return;
+        var dt=new Date(now.getFullYear(),now.getMonth(),now.getDate()+d,Math.floor(m/60),m%60,0);
+        if(dt<=now)return;
+        if(!best||dt<best.at)best={at:dt,item:it,wd:wd,d:d};
+      });
+      if(best)break;
+    }
+    return best;
+  }
+
+  /* ---------- Tampilan ---------- */
+  function renderClock(now){
+    document.getElementById("clock").innerHTML=pad(now.getHours())+":"+pad(now.getMinutes())+"<small>:"+pad(now.getSeconds())+"</small>";
+    document.getElementById("date").textContent=now.toLocaleDateString("id-ID",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+  }
+  function fmtIn(ms){
+    var s=Math.round(ms/1000),d=Math.floor(s/86400);s%=86400;
+    var h=Math.floor(s/3600),m=Math.floor(s%3600/60),sec=s%60;
+    if(d>0)return d+" hari "+h+" jam";
+    return (h>0?h+":"+pad(m):m)+":"+pad(sec);
+  }
+  var lastNextId=null;
+  function renderNext(now){
+    var el=document.getElementById("next"),nb=nextBell(now);
+    if(!state.enabled){el.innerHTML='<div class="lbl">Jadwal nonaktif</div><div class="who">Tidak ada bel yang berbunyi</div>';markNext(null);return}
+    if(!nb){el.innerHTML='<div class="lbl">Bel berikutnya</div><div class="who">Belum ada jadwal</div>';markNext(null);return}
+    var when=nb.d===0?"":DAYS[nb.wd]+" ";
+    el.innerHTML='<div class="lbl">Bel berikutnya dalam</div><div class="in">'+fmtIn(nb.at-now)+'</div><div class="who">'+esc(nb.item.label||"Bel")+" · "+when+nb.item.time+"</div>";
+    markNext(nb.item.id);
+  }
+  function markNext(id){
+    if(id===lastNextId)return;lastNextId=id;
+    document.querySelectorAll(".row").forEach(function(r){r.classList.toggle("next-up",r.dataset.id===id)});
+  }
+  function updateNotice(){document.getElementById("notice").hidden=!!(ctx&&ctx.state==="running")}
+
+  function renderTabs(){
+    var today=new Date().getDay();
+    document.getElementById("tabs").innerHTML=ORDER.map(function(d){
+      var n=state.schedule[d].length;
+      return '<button class="tab'+(d===today?" today":"")+'" role="tab" data-day="'+d+'" aria-selected="'+(d===sel)+'"><span class="n">'+DAYS[d]+'</span><span class="c">'+(n?n+" bel":"kosong")+'</span></button>';
+    }).join("");
+  }
+  function render(){
+    document.getElementById("master").checked=state.enabled;
+    document.getElementById("masterLbl").textContent=state.enabled?"Jadwal aktif":"Jadwal nonaktif";
+    document.getElementById("vol").value=state.volume;
+    document.getElementById("dayTitle").textContent="Bel hari "+DAYS[sel];
+    renderTabs();
+    var list=document.getElementById("list"),items=cur().slice();
+    if(!items.length){
+      list.innerHTML='<div class="empty">Belum ada bel untuk hari '+DAYS[sel]+'.<br><button class="btn primary" data-act="add">Tambah bel</button><button class="btn" data-act="sample">Muat contoh jadwal</button></div>';
+      lastNextId=null;renderNext(new Date());return;
+    }
+    items.sort(function(a,b){return (minutesOf(a.time)||0)-(minutesOf(b.time)||0)});
+    list.innerHTML=items.map(function(it){
+      return '<div class="row'+(it.on?"":" off")+'" data-id="'+it.id+'">'+
+        '<input type="time" data-f="time" value="'+it.time+'" aria-label="Jam bel">'+
+        '<input class="name" type="text" data-f="label" value="'+esc(it.label)+'" placeholder="Nama bel" aria-label="Nama bel">'+
+        '<div class="ctl"><label class="sw" aria-label="Bel aktif"><input type="checkbox" data-f="on"'+(it.on?" checked":"")+'><span></span></label>'+
+        '<button class="btn small" data-act="test">Tes</button><button class="btn small danger" data-act="del">Hapus</button></div>'+
+        '<div class="more">'+
+        '<label>Suara <select data-f="sound">'+soundOpts(it.sound)+'</select></label>'+
+        '<label>Jumlah dering <input class="num" type="number" min="1" max="10" data-f="rings" value="'+it.rings+'"></label></div>'+
+      '</div>';
+    }).join("");
+    lastNextId=null;renderNext(new Date());
+  }
+
+  /* ---------- Aksi ---------- */
+  function find(id){return cur().filter(function(i){return i.id===id})[0]}
+  function addBell(){
+    var now=new Date(),t=pad(now.getHours())+":"+pad((now.getMinutes()+1)%60);
+    var it=newItem(t,"Bel baru");cur().push(it);save();render();
+    var el=document.querySelector('.row[data-id="'+it.id+'"] input.name');
+    if(el){el.focus();el.select()}
+  }
+  function loadSample(){
+    if(cur().length&&!confirm("Ganti jadwal hari "+DAYS[sel]+" dengan contoh jadwal?"))return;
+    var s=[["07:00","Bel masuk"],["07:45","Pelajaran 1"],["08:30","Pelajaran 2"],["09:15","Istirahat"],["09:35","Pelajaran 3"],["10:20","Pelajaran 4"],["11:05","Pelajaran 5"],["11:50","Istirahat siang"],["12:30","Pelajaran 6"],["13:15","Bel pulang"]];
+    state.schedule[sel]=s.map(function(x){return newItem(x[0],x[1])});
+    save();render();
+  }
+
+  document.getElementById("tabs").addEventListener("click",function(e){
+    var b=e.target.closest(".tab");if(!b)return;
+    sel=+b.dataset.day;document.getElementById("copyPanel").classList.remove("on");render();
+  });
+  document.getElementById("add").addEventListener("click",addBell);
+  document.getElementById("sample").addEventListener("click",loadSample);
+
+  document.getElementById("list").addEventListener("click",function(e){
+    var b=e.target.closest("[data-act]");if(!b)return;
+    var act=b.dataset.act;
+    if(act==="add"){addBell();return}
+    if(act==="sample"){loadSample();return}
+    var row=b.closest(".row"),it=row&&find(row.dataset.id);if(!it)return;
+    if(act==="test"){ensureCtx();showRinging("Tes: "+(it.label||"Bel"),play(it.sound,Math.min(it.rings,2)))}
+    else if(act==="del"){
+      if(confirm("Hapus “"+(it.label||it.time)+"”?")){state.schedule[sel]=cur().filter(function(x){return x!==it});save();render()}
+    }
+  });
+  document.getElementById("list").addEventListener("change",function(e){
+    var f=e.target.dataset.f;if(!f)return;
+    var it=find(e.target.closest(".row").dataset.id);if(!it)return;
+    if(f==="on"){it.on=e.target.checked}
+    else if(f==="rings"){it.rings=Math.max(1,Math.min(10,+e.target.value||1))}
+    else if(f==="time"){if(!e.target.value){e.target.value=it.time;return}it.time=e.target.value}
+    else{it[f]=e.target.value}
+    save();
+    if(f==="time"||f==="on")render();else renderNext(new Date());
+  });
+  document.getElementById("list").addEventListener("input",function(e){
+    if(e.target.dataset.f==="label"){var it=find(e.target.closest(".row").dataset.id);if(it){it.label=e.target.value;save()}}
+  });
+
+  /* Salin ke hari lain */
+  document.getElementById("copyBtn").addEventListener("click",function(){
+    var p=document.getElementById("copyPanel");
+    if(!cur().length){alert("Hari "+DAYS[sel]+" belum punya bel untuk disalin.");return}
+    document.getElementById("copyTitle").textContent="Salin jadwal hari "+DAYS[sel]+" ke:";
+    document.getElementById("picks").innerHTML=ORDER.filter(function(d){return d!==sel}).map(function(d){
+      return '<label><input type="checkbox" value="'+d+'">'+DAYS[d]+'</label>';
+    }).join("");
+    p.classList.add("on");
+  });
+  document.getElementById("cancelCopy").addEventListener("click",function(){document.getElementById("copyPanel").classList.remove("on")});
+  document.getElementById("doCopy").addEventListener("click",function(){
+    var t=[].slice.call(document.querySelectorAll("#picks input:checked")).map(function(i){return +i.value});
+    if(!t.length){alert("Pilih minimal satu hari.");return}
+    var filled=t.filter(function(d){return state.schedule[d].length});
+    if(filled.length&&!confirm("Jadwal yang sudah ada di "+filled.map(function(d){return DAYS[d]}).join(", ")+" akan diganti. Lanjutkan?"))return;
+    t.forEach(function(d){state.schedule[d]=cur().map(function(it){return Object.assign({},it,{id:uid()})})});
+    save();document.getElementById("copyPanel").classList.remove("on");render();
+  });
+
+  document.getElementById("enable").addEventListener("click",function(){ensureCtx();play("chime",1)});
+  document.getElementById("master").addEventListener("change",function(e){state.enabled=e.target.checked;save();render()});
+  document.getElementById("vol").addEventListener("input",function(e){state.volume=+e.target.value;save()});
+  document.getElementById("vol").addEventListener("change",function(){ensureCtx();play("beep",1)});
+  document.addEventListener("click",function(){if(ctx&&ctx.state==="suspended")ctx.resume()},true);
+
+  document.getElementById("school").addEventListener("click",function(){
+    if(hasAny()&&!confirm("Jadwal di semua hari akan diganti dengan jadwal SMPK BPK Penabur Cimahi 2026–2027. Lanjutkan?"))return;
+    buildSchool();
+  });
+  document.getElementById('stopBtn').addEventListener('click',stopAll);
+  document.getElementById('pickFile').addEventListener('click',function(){document.getElementById('file').click()});
+  document.getElementById('file').addEventListener('change',function(e){
+    var files=[].slice.call(e.target.files);e.target.value='';
+    if(!ensureCtx()){alert('Browser ini tidak mendukung pemutaran audio.');return}
+    files.forEach(function(f){
+      if(f.size>8*1024*1024){alert('“'+f.name+'” lebih dari 8 MB. Pilih file yang lebih kecil.');return}
+      var rd=new FileReader();
+      rd.onload=function(){
+        var rec={id:uid(),name:f.name.replace(/\.[^.]+$/,''),type:f.type,size:f.size,data:rd.result,dur:0};
+        ctx.decodeAudioData(rd.result.slice(0),function(b){
+          rec.dur=b.duration;bufs[rec.id]=b;sounds.push(rec);renderSounds();render();
+          document.getElementById('soundsBox').open=true;
+          if(dbOK)dbRun('readwrite',function(st){return st.put(rec)}).catch(function(){dbOK=false;renderSounds()});
+        },function(){alert('“'+f.name+'” tidak bisa dibaca sebagai audio. Coba file MP3, WAV, atau OGG.')});
+      };
+      rd.readAsArrayBuffer(f);
+    });
+  });
+  document.getElementById('soundList').addEventListener('click',function(e){
+    var b=e.target.closest('[data-sa]');if(!b)return;
+    var id=b.closest('.srow').dataset.sid,rec=findSound(id);if(!rec)return;
+    if(b.dataset.sa==='play'){ensureCtx();showRinging('Tes: '+rec.name,rec.dur);playCustom(rec,1,state.volume)}
+    else{
+      var used=allItems().filter(function(it){return it.sound==='c:'+id});
+      if(!confirm('Hapus suara “'+rec.name+'”?'+(used.length?' '+used.length+' bel yang memakainya akan kembali ke suara bel sekolah.':'')))return;
+      used.forEach(function(it){it.sound='bell'});
+      sounds=sounds.filter(function(s){return s.id!==id});delete bufs[id];
+      save();
+      if(dbOK)dbRun('readwrite',function(st){return st.delete(id)}).catch(function(){});
+      renderSounds();render();
+    }
+  });
+  load();if(!hasAny())buildSchool();render();updateNotice();tick();loadSounds();
+  setInterval(tick,1000);
+  document.addEventListener("visibilitychange",tick);
+})();
+</script>
+</body>
+</html>
